@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro PDF Watermark Studio</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root { --primary: #00f2ff; --secondary: #7000ff; --glass: rgba(255, 255, 255, 0.1); }
+        
+        body {
+            margin: 0; font-family: 'Inter', sans-serif; height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            background: #050505; color: white; overflow: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animate {
+            position: absolute; width: 100%; height: 100%; z-index: -1;
+            background: radial-gradient(circle at 50% 50%, #1a1a1a, #000);
+        }
+        .shape {
+            position: absolute; border: 1px solid var(--primary);
+            opacity: 0.2; animation: rotate 20s infinite linear;
+        }
+        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .container {
+            background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1); padding: 30px;
+            border-radius: 24px; width: 550px; box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            max-height: 95vh; overflow-y: auto;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--primary); padding: 25px; border-radius: 15px;
+            cursor: pointer; margin-bottom: 20px; text-align: center;
+            transition: 0.3s; background: rgba(0, 242, 255, 0.05);
+        }
+        .drop-zone:hover { background: rgba(0, 242, 255, 0.15); }
+
+        .config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left; }
+        .full-width { grid-column: span 2; }
+        
+        label { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--primary); margin-bottom: 5px; }
+        input, select {
+            width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #333;
+            background: #111; color: white; outline: none; box-sizing: border-box;
+        }
+
+        .btn-toggle-group { display: flex; gap: 5px; }
+        .btn-toggle {
+            flex: 1; padding: 8px; font-size: 12px; border: 1px solid #333;
+            background: #111; color: #777; cursor: pointer; border-radius: 6px;
+        }
+        .btn-toggle.active { background: var(--primary); color: #000; border-color: var(--primary); font-weight: bold; }
+
+        #processBtn {
+            width: 100%; padding: 15px; margin-top: 25px; border-radius: 12px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border: none; color: white; font-weight: bold; font-size: 16px;
+            cursor: pointer; transition: 0.3s;
+        }
+        #processBtn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 242, 255, 0.4); }
+        #processBtn:disabled { filter: grayscale(1); opacity: 0.5; cursor: not-allowed; }
+
+        .progress-bar { height: 4px; background: #222; margin-top: 20px; border-radius: 2px; overflow: hidden; display: none; }
+        #progress { height: 100%; width: 0%; background: var(--primary); transition: 0.3s; }
+        #status { font-size: 12px; color: #888; margin-top: 10px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="bg-animate" id="bg"></div>
+
+<div class="container">
+    <h2 style="margin: 0 0 5px 0; color: var(--primary);">ULTRA WATERMARK PRO</h2>
+    <p style="font-size: 12px; margin-bottom: 25px; opacity: 0.6;">Batch Process: 50 Files | Max: 5GB Total</p>
+
+    <div class="drop-zone" id="dropZone">
+        <span id="label">Click to Upload PDF Batch</span>
+        <input type="file" id="pdfInput" multiple accept=".pdf" style="display: none;">
+    </div>
+
+    <div class="config-grid">
+        <div class="full-width">
+            <label>Watermark Text</label>
+            <input type="text" id="wmText" value="CONFIDENTIAL">
+        </div>
+        
+        <div>
+            <label>Location</label>
+            <select id="wmLocation">
+                <option value="center">Center</option>
+                <option value="top-left">Top-Left</option>
+                <option value="top-right">Top-Right</option>
+                <option value="bottom-left">Bottom-Left</option>
+                <option value="bottom-right">Bottom-Right</option>
+            </select>
+        </div>
+
+        <div>
+            <label>Orientation</label>
+            <div class="btn-toggle-group">
+                <button class="btn-toggle active" onclick="setOrient('diag', this)">Diagonal</button>
+                <button class="btn-toggle" onclick="setOrient('horiz', this)">Horizontal</button>
+            </div>
+        </div>
+
+        <div>
+            <label>Photo Watermark (Optional)</label>
+            <input type="file" id="imgInput" accept="image/png, image/jpeg" style="font-size: 10px;">
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="checkbox" id="invertCheck" style="width: 20px; height: 20px;">
+            <label for="invertCheck" style="margin: 0; cursor: pointer;">Invert Colors</label>
+        </div>
+    </div>
+
+    <button id="processBtn" disabled>PROCESS & DOWNLOAD ALL</button>
+
+    <div class="progress-bar" id="progressWrap">
+        <div id="progress"></div>
+    </div>
+    <div id="status">Ready</div>
+</div>
+
+<script>
+    // Create background shapes
+    const bg = document.getElementById('bg');
+    for(let i=0; i<5; i++) {
+        let s = document.createElement('div');
+        s.className = 'shape';
+        let size = Math.random() * 300 + 100;
+        s.style.width = size + 'px'; s.style.height = size + 'px';
+        s.style.left = Math.random() * 80 + '%'; s.style.top = Math.random() * 80 + '%';
+        s.style.animationDuration = (Math.random() * 20 + 10) + 's';
+        bg.appendChild(s);
+    }
+
+    let orientation = 'diag';
+    function setOrient(type, btn) {
+        orientation = type;
+        document.querySelectorAll('.btn-toggle').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    }
+
+    const { PDFDocument, rgb, degrees, StandardFonts } = PDFLib;
+    const pdfInput = document.getElementById('pdfInput');
+    const imgInput = document.getElementById('imgInput');
+    const processBtn = document.getElementById('processBtn');
+    const status = document.getElementById('status');
+    const progress = document.getElementById('progress');
+    const progressWrap = document.getElementById('progressWrap');
+
+    let pdfFiles = [];
+    document.getElementById('dropZone').onclick = () => pdfInput.click();
+
+    pdfInput.onchange = (e) => {
+        pdfFiles = Array.from(e.target.files).slice(0, 50);
+        if (pdfFiles.length > 0) {
+            document.getElementById('label').innerText = `${pdfFiles.length} files selected`;
+            processBtn.disabled = false;
+        }
+    };
+
+    processBtn.onclick = async () => {
+        processBtn.disabled = true;
+        progressWrap.style.display = 'block';
+        const zip = new JSZip();
+        const text = document.getElementById('wmText').value;
+        const location = document.getElementById('wmLocation').value;
+        const doInvert = document.getElementById('invertCheck').checked;
+
+        try {
+            let wmImage = null;
+            if (imgInput.files[0]) {
+                const imgBytes = await imgInput.files[0].arrayBuffer();
+                // We'll embed this per-doc inside the loop
+            }
+
+            for (let i = 0; i < pdfFiles.length; i++) {
+                status.innerText = `Analyzing: ${pdfFiles[i].name}`;
+                const arrayBuffer = await pdfFiles[i].arrayBuffer();
+                const pdfDoc = await PDFDocument.load(arrayBuffer);
+                const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+                
+                let embeddedImg = null;
+                if (imgInput.files[0]) {
+                    const imgBytes = await imgInput.files[0].arrayBuffer();
+                    embeddedImg = imgInput.files[0].type === 'image/png' ? 
+                        await pdfDoc.embedPng(imgBytes) : await pdfDoc.embedJpg(imgBytes);
+                }
+
+                pdfDoc.getPages().forEach(page => {
+                    const { width, height } = page.getSize();
+                    
+                    if (doInvert) {
+                        page.drawRectangle({ x: 0, y: 0, width, height, color: rgb(1,1,1), blendMode: 'Difference' });
+                    }
+
+                    const rotation = orientation === 'diag' ? degrees(45) : degrees(0);
+                    const opacity = 0.3;
+                    const fontSize = 50;
+                    const textWidth = font.widthOfTextAtSize(text, fontSize);
+                    
+                    let posX = width / 2 - textWidth / 2;
+                    let posY = height / 2;
+
+                    // Location Logic
+                    if (location === 'top-left') { posX = 50; posY = height - 100; }
+                    else if (location === 'top-right') { posX = width - textWidth - 50; posY = height - 100; }
+                    else if (location === 'bottom-left') { posX = 50; posY = 50; }
+                    else if (location === 'bottom-right') { posX = width - textWidth - 50; posY = 50; }
+
+                    if (text) {
+                        page.drawText(text, { x: posX, y: posY, size: fontSize, font, color: rgb(0.5, 0.5, 0.5), opacity, rotate: rotation });
+                    }
+
+                    if (embeddedImg) {
+                        const imgDims = embeddedImg.scale(0.2);
+                        page.drawImage(embeddedImg, { 
+                            x: posX, y: posY - (text ? 60 : 0), 
+                            width: imgDims.width, height: imgDims.height, opacity 
+                        });
+                    }
+                });
+
+                const pdfBytes = await pdfDoc.save();
+                zip.file(`wm_${pdfFiles[i].name}`, pdfBytes);
+                progress.style.width = ((i + 1) / pdfFiles.length * 100) + '%';
+            }
+
+            status.innerText = "Packaging Files...";
+            const blob = await zip.generateAsync({ type: "blob" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = "watermarked_bundle.zip"; a.click();
+            status.innerText = "Task Complete!";
+        } catch (err) {
+            status.innerText = "Error: " + err.message;
+        }
+        processBtn.disabled = false;
+    };
+</script>
+</body>
+</html>

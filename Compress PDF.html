@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Speed PDF Optimizer</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', sans-serif;
+            background: #050505;
+            overflow: hidden;
+            color: white;
+        }
+
+        /* Animated Background Particles */
+        .bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle at center, #111 0%, #000 100%);
+            z-index: -1;
+        }
+        .particle {
+            position: absolute;
+            background: rgba(0, 255, 127, 0.3);
+            border-radius: 50%;
+            filter: blur(5px);
+            animation: float 20s infinite linear;
+        }
+        @keyframes float {
+            0% { transform: translateY(100vh) scale(0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+        }
+
+        .container {
+            background: rgba(20, 20, 20, 0.8);
+            border: 1px solid #00ff7f;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 127, 0.2);
+            width: 450px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .upload-area {
+            border: 2px dashed #00ff7f;
+            padding: 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: 0.3s;
+        }
+        .upload-area:hover { background: rgba(0, 255, 127, 0.1); }
+
+        .toggle-container {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+
+        button {
+            background: #00ff7f;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.3s;
+        }
+        button:hover { background: #00cc66; box-shadow: 0 0 15px #00ff7f; }
+        button:disabled { background: #333; color: #777; cursor: not-allowed; }
+
+        #status { margin-top: 15px; font-size: 14px; color: #00ff7f; }
+        .progress-container {
+            width: 100%; height: 5px; background: #222;
+            margin-top: 20px; border-radius: 10px; overflow: hidden;
+            display: none;
+        }
+        #bar { width: 0%; height: 100%; background: #00ff7f; transition: 0.2s; }
+    </style>
+</head>
+<body>
+
+<div class="bg" id="bg"></div>
+
+<div class="container">
+    <h2 style="margin-top:0">PDF Pro Optimizer</h2>
+    <p style="font-size: 13px; opacity: 0.7;">Fast processing up to 5GB (50 Files)</p>
+
+    <div class="upload-area" id="dropZone">
+        <div id="file-label">Drop PDF Files Here</div>
+        <input type="file" id="fileInput" multiple accept=".pdf" style="display: none;">
+    </div>
+
+    <div class="toggle-container">
+        <input type="checkbox" id="invertMode" style="cursor:pointer">
+        <label for="invertMode" style="cursor:pointer">Invert Colors (Negative)</label>
+    </div>
+
+    <button id="startBtn" disabled>Process & Download</button>
+
+    <div class="progress-container" id="progressWrap">
+        <div id="bar"></div>
+    </div>
+    <div id="status">Ready</div>
+</div>
+
+<script>
+    // Generate background particles
+    const bg = document.getElementById('bg');
+    for(let i=0; i<20; i++) {
+        let p = document.createElement('div');
+        p.className = 'particle';
+        let size = Math.random() * 50 + 10;
+        p.style.width = size + 'px';
+        p.style.height = size + 'px';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDelay = Math.random() * 20 + 's';
+        bg.appendChild(p);
+    }
+
+    const { PDFDocument, rgb } = PDFLib;
+    const fileInput = document.getElementById('fileInput');
+    const startBtn = document.getElementById('startBtn');
+    const status = document.getElementById('status');
+    const bar = document.getElementById('bar');
+    const progressWrap = document.getElementById('progressWrap');
+
+    let files = [];
+
+    document.getElementById('dropZone').onclick = () => fileInput.click();
+
+    fileInput.onchange = (e) => {
+        files = Array.from(e.target.files).slice(0, 50);
+        if (files.length > 0) {
+            document.getElementById('file-label').innerText = files.length + " files ready";
+            startBtn.disabled = false;
+        }
+    };
+
+    startBtn.onclick = async () => {
+        startBtn.disabled = true;
+        progressWrap.style.display = 'block';
+        
+        try {
+            const mergedPdf = await PDFDocument.create();
+            const invert = document.getElementById('invertMode').checked;
+
+            for (let i = 0; i < files.length; i++) {
+                status.innerText = `Analyzing ${files[i].name}...`;
+                const bytes = await files[i].arrayBuffer();
+                const pdf = await PDFDocument.load(bytes);
+                const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+
+                pages.forEach(page => {
+                    if (invert) {
+                        const { width, height } = page.getSize();
+                        page.drawRectangle({
+                            x: 0, y: 0, width, height,
+                            color: rgb(1, 1, 1),
+                            blendMode: 'Difference'
+                        });
+                    }
+                    mergedPdf.addPage(page);
+                });
+
+                bar.style.width = ((i + 1) / files.length * 100) + '%';
+            }
+
+            status.innerText = "Optimizing Structure...";
+            // This preserves the internal structure and size without quality loss
+            const finalBytes = await mergedPdf.save({ useObjectStreams: true });
+            
+            const blob = new Blob([finalBytes], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = "optimized_document.pdf";
+            link.click();
+
+            status.innerText = "Success! Download started.";
+        } catch (err) {
+            status.innerText = "Error: " + err.message;
+        }
+        startBtn.disabled = false;
+    };
+</script>
+
+</body>
+</html>

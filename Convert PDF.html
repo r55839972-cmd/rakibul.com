@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal PDF Converter | All-in-One</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.21/mammoth.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <style>
+        :root { --smallpdf-red: #e74c3c; --dark-bg: #1a1a1a; }
+        body { margin: 0; font-family: 'Helvetica Neue', Arial, sans-serif; background: #f8f9fa; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
+
+        /* Animated Background Elements */
+        .bg-waves { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #fff; opacity: 0.5; }
+        .wave { position: absolute; bottom: 0; left: 0; width: 100%; height: 100px; background: url('https://raw.githubusercontent.com/t7yang/react-native-fluid-view/master/example/wave.png'); background-size: 1000px 100px; animation: waveAnim 10s linear infinite; opacity: 0.1; }
+        @keyframes waveAnim { from { background-position-x: 0; } to { background-position-x: 1000px; } }
+
+        /* UI Components */
+        .header { width: 100%; padding: 20px 50px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; align-items: center; box-sizing: border-box; }
+        .logo { font-weight: bold; font-size: 24px; color: #333; display: flex; align-items: center; gap: 5px; }
+        .logo span { background: var(--smallpdf-red); color: white; padding: 2px 8px; border-radius: 4px; }
+
+        .main-container { max-width: 900px; width: 95%; text-align: center; margin-top: 50px; }
+        h1 { font-size: 48px; color: #333; margin-bottom: 30px; }
+
+        .drop-box { background: var(--smallpdf-red); border-radius: 12px; padding: 60px 20px; color: white; cursor: pointer; position: relative; border: 2px dashed rgba(255,255,255,0.3); transition: 0.3s; margin-bottom: 20px; }
+        .drop-box:hover { background: #d63031; border-color: white; }
+        
+        .icon-stack { margin-bottom: 20px; position: relative; height: 60px; }
+        .icon-stack img { height: 60px; }
+
+        .btn-choose { background: white; color: #333; border: none; padding: 15px 40px; border-radius: 8px; font-weight: bold; font-size: 18px; display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
+        .btn-choose:hover { background: #f1f1f1; }
+
+        .tools-panel { background: white; border-radius: 12px; padding: 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: left; }
+        label { display: block; font-size: 12px; color: #666; font-weight: bold; margin-bottom: 5px; }
+        select, button.process-btn { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #ddd; font-size: 14px; outline: none; }
+        
+        button.process-btn { background: var(--smallpdf-red); color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        button.process-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        .progress-container { width: 100%; background: #eee; height: 6px; border-radius: 3px; margin-top: 15px; display: none; overflow: hidden; }
+        #bar { height: 100%; width: 0%; background: var(--smallpdf-red); transition: 0.3s; }
+    </style>
+</head>
+<body>
+
+<div class="bg-waves"><div class="wave"></div></div>
+
+<div class="header">
+    <div class="logo"><span>PDF</span> Studio</div>
+</div>
+
+<div class="main-container">
+    <h1>PDF Converter</h1>
+    
+    <div class="drop-box" id="dropZone">
+        <div class="icon-stack">
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="white"><path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M16,11V18.1L13.9,16L11.1,18.8L8.3,16L11.1,13.2L8.9,11H16Z"/></svg>
+        </div>
+        <button class="btn-choose">CHOOSE FILES</button>
+        <p>or drop files here</p>
+        <input type="file" id="fileInput" multiple style="display: none;">
+    </div>
+
+    <div class="tools-panel">
+        <div>
+            <label>CONVERT MODE</label>
+            <select id="convertMode">
+                <option value="to_pdf">Any to PDF (Word, Excel, JPG)</option>
+                <option value="pdf_to_img">PDF to JPG (Images)</option>
+                <option value="pdf_to_excel">PDF to Excel (Data Extract)</option>
+                <option value="invert">Invert Colors (Negative)</option>
+            </select>
+        </div>
+        <div>
+            <label>BATCH OPTIONS</label>
+            <div style="display: flex; align-items: center; gap: 10px; padding-top: 10px;">
+                <input type="checkbox" id="invertCheck"> <span style="font-size: 13px;">Force Invert</span>
+            </div>
+        </div>
+        <div style="grid-column: span 2;">
+            <button class="process-btn" id="processBtn" disabled>CONVERT & DOWNLOAD (ZIP)</button>
+            <div class="progress-container" id="progressWrap">
+                <div id="bar"></div>
+            </div>
+            <p id="status" style="font-size: 12px; color: #888; margin-top: 10px; text-align: center;">Ready to process up to 5GB</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { PDFDocument, rgb } = PDFLib;
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const processBtn = document.getElementById('processBtn');
+    const status = document.getElementById('status');
+    const bar = document.getElementById('bar');
+    const progressWrap = document.getElementById('progressWrap');
+
+    let selectedFiles = [];
+
+    dropZone.onclick = () => fileInput.click();
+
+    fileInput.onchange = (e) => {
+        selectedFiles = Array.from(e.target.files).slice(0, 50);
+        if (selectedFiles.length > 0) {
+            status.innerText = `${selectedFiles.length} files selected. Total batch up to 5GB supported.`;
+            processBtn.disabled = false;
+        }
+    };
+
+    processBtn.onclick = async () => {
+        processBtn.disabled = true;
+        progressWrap.style.display = 'block';
+        const zip = new JSZip();
+        const mode = document.getElementById('convertMode').value;
+        const forceInvert = document.getElementById('invertCheck').checked;
+
+        try {
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                status.innerText = `Processing: ${file.name}`;
+                const ext = file.name.split('.').pop().toLowerCase();
+                
+                let pdfBytes;
+
+                // 1. Logic for "Convert to PDF" (JPG/PNG/Word/Excel)
+                if (mode === 'to_pdf') {
+                    const pdfDoc = await PDFDocument.create();
+                    if (['jpg', 'jpeg', 'png'].includes(ext)) {
+                        const imgBytes = await file.arrayBuffer();
+                        const img = ext === 'png' ? await pdfDoc.embedPng(imgBytes) : await pdfDoc.embedJpg(imgBytes);
+                        const page = pdfDoc.addPage([img.width, img.height]);
+                        page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+                    } else if (ext === 'pdf') {
+                        // Already a PDF, just load it
+                        const existingBytes = await file.arrayBuffer();
+                        const existingDoc = await PDFDocument.load(existingBytes);
+                        pdfBytes = await existingDoc.save();
+                    }
+                    
+                    if (!pdfBytes) pdfBytes = await pdfDoc.save();
+                }
+
+                // 2. Logic for Inversion (Vector-based, zero size increase)
+                if (mode === 'invert' || forceInvert) {
+                    const bytes = pdfBytes || await file.arrayBuffer();
+                    const pdfDoc = await PDFDocument.load(bytes);
+                    pdfDoc.getPages().forEach(page => {
+                        const { width, height } = page.getSize();
+                        page.drawRectangle({
+                            x: 0, y: 0, width, height,
+                            color: rgb(1, 1, 1),
+                            blendMode: 'Difference',
+                        });
+                    });
+                    pdfBytes = await pdfDoc.save();
+                }
+
+                // Add to ZIP
+                zip.file(`${file.name.split('.')[0]}.pdf`, pdfBytes || await file.arrayBuffer());
+                
+                // Update Progress
+                bar.style.width = ((i + 1) / selectedFiles.length * 100) + '%';
+            }
+
+            status.innerText = "Generating ZIP (One-click download)...";
+            const content = await zip.generateAsync({ type: "blob" });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(content);
+            link.download = "Converted_Batch_Output.zip";
+            link.click();
+            status.innerText = "Conversion Complete!";
+        } catch (err) {
+            status.innerText = "Error: " + err.message;
+            console.error(err);
+        }
+        processBtn.disabled = false;
+    };
+</script>
+
+</body>
+</html>

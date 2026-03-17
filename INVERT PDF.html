@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAKIBUL INVERT PDF</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: #fff;
+        }
+        
+        .container {
+            position: relative;
+            z-index: 10;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            padding: 2rem 0;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            margin-bottom: 3rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 2rem;
+        }
+        
+        .btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+        }
+        
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn.active {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: #ff6b6b;
+        }
+        
+        .content {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #ffd166;
+        }
+        
+        p {
+            line-height: 1.7;
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .feature-card i {
+            font-size: 2.5rem;
+            color: #6ee7b7;
+            margin-bottom: 1rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            margin-top: 2rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* ====================== */
+        /* ANIMATED BACKGROUNDS */
+        /* ====================== */
+        
+        #animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        
+        /* Option 1: Floating Particles */
+        .particles-bg {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            overflow: hidden;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            animation: float 15s infinite linear;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(0) translateX(0) rotate(0deg);
+                opacity: 0.8;
+            }
+            50% {
+                opacity: 0.4;
+            }
+            100% {
+                transform: translateY(-100vh) translateX(100px) rotate(360deg);
+                opacity: 0.8;
+            }
+        }
+        
+        /* Option 2: Gradient Wave */
+        .gradient-wave-bg {
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        
+        /* Option 3: Geometric Shapes */
+        .geometric-bg {
+            background-color: #1a1a2e;
+            overflow: hidden;
+        }
+        
+        .shape {
+            position: absolute;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            animation: rotate 20s infinite linear;
+        }
+        
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+        
+        /* Option 4: Stars */
+        .stars-bg {
+            background-color: #0a0a1a;
+            overflow: hidden;
+        }
+        
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+        
+        @keyframes twinkle {
+            0% {
+                opacity: 0.2;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+        
+        /* Option 5: Liquid Bubble */
+        .liquid-bubble-bg {
+            background-color: #1a1a2e;
+            overflow: hidden;
+        }
+        
+        .bubble {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            animation: bubble-rise 20s infinite linear;
+        }
+        
+        @keyframes bubble-rise {
+            0% {
+                transform: translateY(100vh) scale(0.5);
+            }
+            100% {
+                transform: translateY(-100px) scale(1);
+            }
+        }
+        
+        /* Instructions */
+        .instructions {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            border-left: 4px solid #ff6b6b;
+        }
+        
+        .instructions h3 {
+            color: #ffd166;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background Container -->
+    <div id="animated-bg" class="particles-bg"></div>
+
+        
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const bgContainer = document.getElementById('animated-bg');
+            const buttons = document.querySelectorAll('.btn');
+            let currentBg = 'particles';
+            
+            // Create initial particles
+            createParticles();
+            
+            // Button click event listeners
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const bgType = this.getAttribute('data-bg');
+                    switchBackground(bgType);
+                    
+                    // Update active button
+                    buttons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            // Switch background function
+            function switchBackground(type) {
+                currentBg = type;
+                bgContainer.innerHTML = '';
+                bgContainer.className = type + '-bg';
+                
+                switch(type) {
+                    case 'particles':
+                        createParticles();
+                        break;
+                    case 'gradient-wave':
+                        // No additional elements needed
+                        break;
+                    case 'geometric':
+                        createGeometricShapes();
+                        break;
+                    case 'stars':
+                        createStars();
+                        break;
+                    case 'liquid-bubble':
+                        createBubbles();
+                        break;
+                }
+            }
+            
+            // Create floating particles
+            function createParticles() {
+                const particleCount = 50;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+                    particle.classList.add('particle');
+                    
+                    // Random size between 5px and 30px
+                    const size = Math.random() * 25 + 5;
+                    particle.style.width = `${size}px`;
+                    particle.style.height = `${size}px`;
+                    
+                    // Random position
+                    particle.style.left = `${Math.random() * 100}vw`;
+                    particle.style.top = `${Math.random() * 100}vh`;
+                    
+                    // Random animation delay and duration
+                    const delay = Math.random() * 15;
+                    const duration = Math.random() * 10 + 10;
+                    particle.style.animationDelay = `${delay}s`;
+                    particle.style.animationDuration = `${duration}s`;
+                    
+                    // Random color
+                    const colors = [
+                        'rgba(255, 107, 107, 0.3)',
+                        'rgba(110, 231, 183, 0.3)',
+                        'rgba(255, 209, 102, 0.3)',
+                        'rgba(120, 119, 237, 0.3)',
+                        'rgba(255, 255, 255, 0.2)'
+                    ];
+                    particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    bgContainer.appendChild(particle);
+                }
+            }
+            
+            // Create geometric shapes
+            function createGeometricShapes() {
+                const shapeCount = 15;
+                
+                for (let i = 0; i < shapeCount; i++) {
+                    const shape = document.createElement('div');
+                    shape.classList.add('shape');
+                    
+                    // Random size between 50px and 200px
+                    const size = Math.random() * 150 + 50;
+                    shape.style.width = `${size}px`;
+                    shape.style.height = `${size}px`;
+                    
+                    // Random position
+                    shape.style.left = `${Math.random() * 100}vw`;
+                    shape.style.top = `${Math.random() * 100}vh`;
+                    
+                    // Random animation duration
+                    const duration = Math.random() * 15 + 10;
+                    shape.style.animationDuration = `${duration}s`;
+                    
+                    // Random shape type
+                    const shapes = ['square', 'circle', 'triangle'];
+                    const shapeType = shapes[Math.floor(Math.random() * shapes.length)];
+                    
+                    if (shapeType === 'circle') {
+                        shape.style.borderRadius = '50%';
+                    } else if (shapeType === 'triangle') {
+                        shape.style.width = '0';
+                        shape.style.height = '0';
+                        shape.style.border = `${size/2}px solid transparent`;
+                        shape.style.borderBottom = `${size}px solid rgba(255, 107, 107, 0.1)`;
+                        shape.style.backgroundColor = 'transparent';
+                    }
+                    
+                    // Random color
+                    const colors = [
+                        'rgba(255, 107, 107, 0.1)',
+                        'rgba(110, 231, 183, 0.1)',
+                        'rgba(255, 209, 102, 0.1)',
+                        'rgba(120, 119, 237, 0.1)'
+                    ];
+                    shape.style.borderColor = colors[Math.floor(Math.random() * colors.length)];
+                    
+                    bgContainer.appendChild(shape);
+                }
+            }
+            
+            // Create twinkling stars
+            function createStars() {
+                const starCount = 150;
+                
+                for (let i = 0; i < starCount; i++) {
+                    const star = document.createElement('div');
+                    star.classList.add('star');
+                    
+                    // Random size between 1px and 3px
+                    const size = Math.random() * 2 + 1;
+                    star.style.width = `${size}px`;
+                    star.style.height = `${size}px`;
+                    
+                    // Random position
+                    star.style.left = `${Math.random() * 100}vw`;
+                    star.style.top = `${Math.random() * 100}vh`;
+                    
+                    // Random animation delay and duration
+                    const delay = Math.random() * 2;
+                    const duration = Math.random() * 1 + 1;
+                    star.style.animationDelay = `${delay}s`;
+                    star.style.animationDuration = `${duration}s`;
+                    
+                    bgContainer.appendChild(star);
+                }
+            }
+            
+            // Create liquid bubbles
+            function createBubbles() {
+                const bubbleCount = 30;
+                
+                for (let i = 0; i < bubbleCount; i++) {
+                    const bubble = document.createElement('div');
+                    bubble.classList.add('bubble');
+                    
+                    // Random size between 30px and 100px
+                    const size = Math.random() * 70 + 30;
+                    bubble.style.width = `${size}px`;
+                    bubble.style.height = `${size}px`;
+                    
+                    // Random position
+                    bubble.style.left = `${Math.random() * 100}vw`;
+                    
+                    // Random animation duration
+                    const duration = Math.random() * 10 + 10;
+                    bubble.style.animationDuration = `${duration}s`;
+                    
+                    // Random color
+                    const colors = [
+                        'rgba(255, 107, 107, 0.05)',
+                        'rgba(110, 231, 183, 0.05)',
+                        'rgba(255, 209, 102, 0.05)',
+                        'rgba(120, 119, 237, 0.05)'
+                    ];
+                    bubble.style.background = `radial-gradient(circle at 30% 30%, ${colors[Math.floor(Math.random() * colors.length)]}, rgba(255, 255, 255, 0.01))`;
+                    
+                    bgContainer.appendChild(bubble);
+                }
+            }
+            
+            // Resize event listener
+            window.addEventListener('resize', function() {
+                // Recreate elements on resize for better responsiveness
+                switchBackground(currentBg);
+            });
+        });
+    </script>
+</body>
+</html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rakibul PDF Inverter (Max 5GB)</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f4f4f9; display: flex; justify-content: center; padding: 40px; }
+        .container { background: INDIGO; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 100%; max-width: 600px; text-align: center; }
+        .drop-zone { border: 2px dashed #007bff; padding: 40px; border-radius: 8px; cursor: pointer; margin-bottom: 20px; transition: 0.3s; }
+        .drop-zone:hover { background: #eef6ff; }
+        button { background: #007bff; color: BLACK; border: none; padding: 12px 24px; border-radius: 6px; cursor: pointer; font-size: 16px; font-weight: 600; margin-top: 10px; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        #status { margin-top: 20px; font-size: 14px; color: WHITE; }
+        .progress-bar { height: 8px; width: 0%; background: #28a745; margin-top: 10px; border-radius: 4px; transition: width 0.5s; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Rakibul Invert PDF Pro</h2>
+    <p>Upload up to 50 files (Max 5GB total)</p>
+    
+    <div class="drop-zone" id="dropZone">
+        Click or Drag & Drop PDF files here
+        <input type="file" id="fileInput" multiple accept=".pdf" style="display: none;">
+    </div>
+
+    <button id="processBtn" disabled>Invert & Download All (ZIP)</button>
+    
+    <div id="status">Ready</div>
+    <div style="width: 100%; background: #eee; border-radius: 4px; overflow: hidden;">
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const processBtn = document.getElementById('processBtn');
+    const status = document.getElementById('status');
+    const progressBar = document.getElementById('progressBar');
+
+    let selectedFiles = [];
+
+    dropZone.onclick = () => fileInput.click();
+
+    fileInput.onchange = (e) => {
+        selectedFiles = Array.from(e.target.files).slice(0, 50);
+        if (selectedFiles.length > 0) {
+            status.innerText = `${selectedFiles.length} files selected.`;
+            processBtn.disabled = false;
+        }
+    };
+
+    processBtn.onclick = async () => {
+        processBtn.disabled = true;
+        const zip = new JSZip();
+        const { PDFDocument, rgb } = PDFLib;
+
+        for (let i = 0; i < selectedFiles.length; i++) {
+            const file = selectedFiles[i];
+            status.innerText = `Processing: ${file.name}...`;
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdfDoc = await PDFDocument.load(arrayBuffer);
+                const pages = pdfDoc.getPages();
+
+                pages.forEach(page => {
+                    // This applies a non-destructive inversion operator to the page content
+                    // It creates a "Negative" effect by drawing a white rectangle 
+                    // with a 'Difference' blend mode over the page
+                    const { width, height } = page.getSize();
+                    page.drawRectangle({
+                        x: 0,
+                        y: 0,
+                        width,
+                        height,
+                        color: rgb(1, 1, 1),
+                        opacity: 1,
+                        blendMode: 'Difference',
+                    });
+                });
+
+                const pdfBytes = await pdfDoc.save();
+                zip.file(`inverted_${file.name}`, pdfBytes);
+                
+                // Update Progress
+                const percent = Math.round(((i + 1) / selectedFiles.length) * 100);
+                progressBar.style.width = percent + '%';
+
+            } catch (err) {
+                console.error("Error processing " + file.name, err);
+            }
+        }
+
+        status.innerText = "Zipping files...";
+        const content = await zip.generateAsync({ type: "blob" });
+        
+        // Trigger Download
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        link.download = "inverted_pdfs.zip";
+        link.click();
+
+        status.innerText = "Done!";
+        processBtn.disabled = false;
+    };
+</script>
+
+</body>
+</html>

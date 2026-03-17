@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro PDF Rotate & Invert</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        :root { --neon-green: #0f0; --dark-bg: #050505; }
+        body {
+            margin: 0; padding: 0; background: var(--dark-bg);
+            font-family: 'Courier New', monospace; color: var(--neon-green);
+            display: flex; align-items: center; justify-content: center;
+            height: 100vh; overflow: hidden;
+        }
+
+        /* Matrix Canvas Background */
+        #matrix { position: absolute; top: 0; left: 0; z-index: -1; opacity: 0.3; }
+
+        .container {
+            background: rgba(0, 20, 0, 0.85);
+            border: 1px solid var(--neon-green);
+            padding: 30px; border-radius: 5px;
+            width: 450px; text-align: center;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+            backdrop-filter: blur(5px);
+        }
+
+        .drop-zone {
+            border: 1px dashed var(--neon-green);
+            padding: 30px; cursor: pointer; margin-bottom: 20px;
+            transition: 0.3s;
+        }
+        .drop-zone:hover { background: rgba(0, 255, 0, 0.1); }
+
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        select, button {
+            background: black; color: var(--neon-green);
+            border: 1px solid var(--neon-green);
+            padding: 10px; cursor: pointer; font-family: inherit;
+        }
+        button:hover:not(:disabled) { background: var(--neon-green); color: black; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .progress-wrap {
+            width: 100%; height: 4px; background: #002200;
+            margin-top: 20px; display: none;
+        }
+        #bar { height: 100%; background: var(--neon-green); width: 0%; transition: 0.2s; }
+        #status { font-size: 12px; margin-top: 10px; height: 15px; }
+    </style>
+</head>
+<body>
+
+<canvas id="matrix"></canvas>
+
+<div class="container">
+    <h2 style="margin-top:0">PDF ROTATOR PRO</h2>
+    <p style="font-size: 12px; margin-bottom: 20px;">[ Batch: 50 Files | Max: 5GB ]</p>
+
+    <div class="drop-zone" id="dropZone">
+        <span id="label">LOAD SOURCE FILES</span>
+        <input type="file" id="fileInput" multiple accept=".pdf" style="display: none;">
+    </div>
+
+    <div class="controls">
+        <div>
+            <label style="font-size: 10px; display: block;">ROTATION</label>
+            <select id="rotateAngle" style="width: 100%;">
+                <option value="0">0° (None)</option>
+                <option value="90">90° Clockwise</option>
+                <option value="180">180° Flip</option>
+                <option value="270">90° Counter-CW</option>
+            </select>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 5px;">
+            <input type="checkbox" id="invertCheck">
+            <label for="invertCheck" style="font-size: 10px;">INVERT COLORS</label>
+        </div>
+    </div>
+
+    <button id="execBtn" style="width: 100%;" disabled>EXECUTE & DOWNLOAD ZIP</button>
+
+    <div class="progress-wrap" id="progressWrap">
+        <div id="bar"></div>
+    </div>
+    <div id="status">IDLE</div>
+</div>
+
+<script>
+    // Matrix Animation
+    const canvas = document.getElementById('matrix');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*";
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+
+    function drawMatrix() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#0f0";
+        ctx.font = fontSize + "px arial";
+        for (let i = 0; i < drops.length; i++) {
+            const text = letters.charAt(Math.floor(Math.random() * letters.length));
+            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+            drops[i]++;
+        }
+    }
+    setInterval(drawMatrix, 33);
+
+    // PDF Logic
+    const { PDFDocument, rgb, degrees } = PDFLib;
+    const fileInput = document.getElementById('fileInput');
+    const dropZone = document.getElementById('dropZone');
+    const execBtn = document.getElementById('execBtn');
+    const status = document.getElementById('status');
+    const bar = document.getElementById('bar');
+    const progressWrap = document.getElementById('progressWrap');
+
+    let files = [];
+
+    dropZone.onclick = () => fileInput.click();
+    fileInput.onchange = (e) => {
+        files = Array.from(e.target.files).slice(0, 50);
+        if (files.length > 0) {
+            document.getElementById('label').innerText = `${files.length} FILES LOADED`;
+            execBtn.disabled = false;
+        }
+    };
+
+    execBtn.onclick = async () => {
+        execBtn.disabled = true;
+        progressWrap.style.display = 'block';
+        const zip = new JSZip();
+        const angle = parseInt(document.getElementById('rotateAngle').value);
+        const shouldInvert = document.getElementById('invertCheck').checked;
+
+        try {
+            for (let i = 0; i < files.length; i++) {
+                status.innerText = `PROCESSING: ${files[i].name}`;
+                const arrayBuffer = await files[i].arrayBuffer();
+                const pdfDoc = await PDFDocument.load(arrayBuffer);
+                const pages = pdfDoc.getPages();
+
+                pages.forEach(page => {
+                    // Rotate
+                    const currentRotation = page.getRotation().angle;
+                    page.setRotation(degrees(currentRotation + angle));
+
+                    // Invert
+                    if (shouldInvert) {
+                        const { width, height } = page.getSize();
+                        page.drawRectangle({
+                            x: 0, y: 0, width, height,
+                            color: rgb(1, 1, 1), blendMode: 'Difference'
+                        });
+                    }
+                });
+
+                const pdfBytes = await pdfDoc.save();
+                zip.file(`rotated_${files[i].name}`, pdfBytes);
+                bar.style.width = ((i + 1) / files.length * 100) + '%';
+            }
+
+            status.innerText = "COMPILING ARCHIVE...";
+            const zipBlob = await zip.generateAsync({ type: "blob" });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(zipBlob);
+            link.download = "processed_pdfs.zip";
+            link.click();
+            status.innerText = "TASK COMPLETE";
+        } catch (err) {
+            status.innerText = "CRITICAL ERROR: " + err.message;
+        }
+        execBtn.disabled = false;
+    };
+</script>
+</body>
+</html>

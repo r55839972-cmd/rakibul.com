@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultra PDF Merger & Inverter</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <style>
+        /* Animated Background */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            overflow: hidden;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 { color: #333; margin-bottom: 10px; font-size: 24px; }
+        p { color: #666; font-size: 14px; margin-bottom: 25px; }
+
+        .upload-box {
+            border: 2px dashed #23a6d5;
+            padding: 30px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .upload-box:hover {
+            background: rgba(35, 166, 213, 0.1);
+            border-color: #e73c7e;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: #444;
+        }
+
+        #btn-process {
+            background: #23a6d5;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s, background 0.3s;
+        }
+
+        #btn-process:hover {
+            background: #1e8cb4;
+            transform: scale(1.02);
+        }
+
+        #btn-process:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #status {
+            margin-top: 20px;
+            font-size: 13px;
+            color: #555;
+            min-height: 20px;
+        }
+
+        .progress-wrapper {
+            width: 100%;
+            background: #eee;
+            height: 8px;
+            border-radius: 4px;
+            margin-top: 15px;
+            display: none;
+            overflow: hidden;
+        }
+
+        #progress-bar {
+            width: 0%;
+            height: 100%;
+            background: #e73c7e;
+            transition: width 0.2s;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>PDF Merger & Inverter</h1>
+    <p>Supports up to 50 files (Max 5GB total)</p>
+
+    <div class="upload-box" id="drop-zone">
+        <span id="file-label">Click or Drag PDF files here</span>
+        <input type="file" id="file-input" multiple accept=".pdf" style="display: none;">
+    </div>
+
+    <div class="controls">
+        <input type="checkbox" id="invert-toggle" style="width: 18px; height: 18px; cursor: pointer;">
+        <label for="invert-toggle" style="cursor: pointer;">Invert Colors (Negative Mode)</label>
+    </div>
+
+    <button id="btn-process" disabled>Merge & Download</button>
+
+    <div class="progress-wrapper" id="progress-wrapper">
+        <div id="progress-bar"></div>
+    </div>
+    <div id="status">Waiting for files...</div>
+</div>
+
+<script>
+    const { PDFDocument, rgb } = PDFLib;
+    const fileInput = document.getElementById('file-input');
+    const dropZone = document.getElementById('drop-zone');
+    const btnProcess = document.getElementById('btn-process');
+    const status = document.getElementById('status');
+    const progressBar = document.getElementById('progress-bar');
+    const progressWrapper = document.getElementById('progress-wrapper');
+    const invertToggle = document.getElementById('invert-toggle');
+    const fileLabel = document.getElementById('file-label');
+
+    let selectedFiles = [];
+
+    dropZone.onclick = () => fileInput.click();
+
+    fileInput.onchange = (e) => {
+        selectedFiles = Array.from(e.target.files).slice(0, 50);
+        if (selectedFiles.length > 0) {
+            fileLabel.innerText = `${selectedFiles.length} files selected`;
+            btnProcess.disabled = false;
+            status.innerText = "Ready to process.";
+        }
+    };
+
+    btnProcess.onclick = async () => {
+        btnProcess.disabled = true;
+        progressWrapper.style.display = 'block';
+        status.innerText = "Starting process...";
+
+        try {
+            const mergedDoc = await PDFDocument.create();
+            const shouldInvert = invertToggle.checked;
+
+            for (let i = 0; i < selectedFiles.length; i++) {
+                const file = selectedFiles[i];
+                status.innerText = `Adding: ${file.name}`;
+                
+                const arrayBuffer = await file.arrayBuffer();
+                const srcDoc = await PDFDocument.load(arrayBuffer);
+                const copiedPages = await mergedDoc.copyPages(srcDoc, srcDoc.getPageIndices());
+
+                copiedPages.forEach((page) => {
+                    if (shouldInvert) {
+                        const { width, height } = page.getSize();
+                        // Apply Difference blend mode (high speed, keeps file size same)
+                        page.drawRectangle({
+                            x: 0, y: 0, width, height,
+                            color: rgb(1, 1, 1),
+                            opacity: 1,
+                            blendMode: 'Difference',
+                        });
+                    }
+                    mergedDoc.addPage(page);
+                });
+
+                // Update UI
+                const percent = Math.round(((i + 1) / selectedFiles.length) * 100);
+                progressBar.style.width = percent + '%';
+            }
+
+            status.innerText = "Generating final file (this may take a moment for large files)...";
+            // Fast save mode
+            const pdfBytes = await mergedDoc.save({ useObjectStreams: false });
+            
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = "Merged_Document.pdf";
+            link.click();
+
+            status.innerText = "Complete! File downloaded.";
+        } catch (err) {
+            console.error(err);
+            status.innerText = "Error: " + err.message;
+        } finally {
+            btnProcess.disabled = false;
+        }
+    };
+</script>
+
+</body>
+</html>
