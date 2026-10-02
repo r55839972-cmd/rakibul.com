@@ -223,42 +223,7 @@
     </div>
   </div>
 
-  <!-- The confirmation state screen after a decision is made -->
-  <div class="final-screen verification-card" id="final-screen">
-    <div class="confirm-icon" id="confirm-icon">🇧🇩</div>
-    <h1 id="confirm-title">Verification Successful!</h1>
-    <p class="bilingual" id="confirm-msg">Redirecting to citizen services...</p>
-    <div style="color:var(--text-muted); margin-top:15px; text-decoration:underline;">
-      নাগরিক পরিষেবাগুলিতে পুনরায় নির্দেশিত হচ্ছে...
-    </div>
-  </div>
-
-  <script>
-    // Handles the smooth transition after user selects an option.
-    function showChoice(status) {
-      const initScreen = document.getElementById('initial-screen');
-      const finalScreen = document.getElementById('final-screen');
-      const icon = document.getElementById('confirm-icon');
-      const title = document.getElementById('confirm-title');
-      const msg = document.getElementById('confirm-msg');
-
-      // 1. Hide the choice screen
-      initScreen.style.display = 'none';
-
-      // 2. Adjust content based on the decision
-      if (status === 'Yes') {
-        icon.innerText = "🇧🇩";
-        title.innerText = "নাগরিকত্ব যাচাইকরণ সম্পূর্ণ";
-        msg.innerText = "Thank you for confirming. Verification successful.";
-      } else {
-        icon.innerText = "🌐";
-        title.innerText = "নাগরিক নন / অনাবাসী";
-        msg.innerText = "Thank you for confirming. Access denied to internal citizen services.";
-      }
-
-      // 3. Reveal the final confirmation state smoothly
-      finalScreen.style.display = 'block';
-    }
+  
   </script>
 
 </body>
