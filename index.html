@@ -1,75 +1,265 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="bn">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <style>
-        /*======================
-    404 page
-=======================*/
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verification: Citizenship Check | নাগরিকত্ব যাচাই</title>
+  <style>
+    /* ================= 1. Definitions & Reset ================= */
+    :root {
+      --bd-green: #006A4E;
+      --bd-red: #F42A41;
+      --bg-dark: #021812;
+      --text-main: #FFFFFF;
+      --text-muted: #94A3B8;
+      --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
 
-.page_404 {
-  padding: 40px 0;
-  background: #fff;
-  font-family: "Arvo", serif;
-}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-.page_404 img {
-  width: 100%;
-}
+    body {
+      background-color: var(--bg-dark);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-main);
+      overflow: hidden; /* Ambient background won't scroll */
+      position: relative;
+    }
 
-.four_zero_four_bg {
-  background-image: url(https://cdn.dribbble.com/users/285475/screenshots/2083086/dribbble_1.gif);
-  height: 400px;
-  background-position: center;
-  background-repeat: no-repeat;
-}
+    /* ================= 2. Ambient Animated Background ================= */
+    .ambient-glow {
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(0, 106, 78, 0.4) 0%, transparent 75%);
+      border-radius: 50%;
+      animation: ambientPulse 5s ease-in-out infinite;
+      z-index: 0;
+      pointer-events: none;
+    }
 
-.four_zero_four_bg h1 {
-  font-size: 80px;
-}
+    /* ================= 3. Main Verification Card ================= */
+    .verification-card {
+      position: relative;
+      z-index: 2;
+      background: rgba(4, 30, 22, 0.85); /* Semi-transparent Green */
+      border: 1px solid rgba(0, 255, 170, 0.2);
+      backdrop-filter: blur(16px);
+      border-radius: 24px;
+      padding: 50px 40px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+      /* Entrance Animation */
+      animation: cardEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
 
-.four_zero_four_bg h3 {
-  font-size: 80px;
-}
+    /* Status Circle with Pulsing Red Disk */
+    .status-area {
+      width: 130px;
+      height: 130px;
+      margin: 0 auto 30px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
 
-.link_404 {
-  color: #fff !important;
-  padding: 10px 20px;
-  background: #39ac31;
-  margin: 20px 0;
-  display: inline-block;
-}
-.contant_box_404 {
-  margin-top: -50px;
-}
-.div-1{
-    text-align: center;
-}
+    .outer-ring {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border: 3px dashed rgba(0, 255, 170, 0.4);
+      border-radius: 50%;
+      animation: spin 15s linear infinite;
+    }
 
-    </style>
+    .pulsing-disk {
+      width: 65px;
+      height: 65px;
+      background-color: var(--bd-red);
+      border-radius: 50%;
+      box-shadow: 0 0 35px var(--bd-red);
+      animation: corePulse 2.5s ease-in-out infinite;
+      z-index: 3;
+    }
+
+    /* Text & Content Animations */
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: #FFFFFF;
+      opacity: 0; /* Delay reveal */
+      animation: fadeInUp 0.5s ease forwards 0.4s;
+    }
+
+    .bilingual {
+      font-size: 1.1rem;
+      color: #e2e8f0;
+      margin-bottom: 30px;
+      line-height: 1.6;
+      opacity: 0;
+      animation: fadeInUp 0.5s ease forwards 0.6s;
+    }
+
+    /* Choice Buttons Group */
+    .btn-group {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeInUp 0.5s ease forwards 0.8s;
+    }
+
+    .btn {
+      padding: 14px 36px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-decoration: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Option 1: Yes (Bangladesh Green/Cyan) */
+    .btn-yes {
+      background: linear-gradient(135deg, var(--bd-green) 0%, #008864 100%);
+      color: #FFFFFF;
+      box-shadow: 0 4px 15px rgba(0, 106, 78, 0.4);
+    }
+
+    .btn-yes:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(0, 255, 170, 0.7);
+    }
+
+    /* Option 2: No (Outline style) */
+    .btn-no {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-no:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: var(--bd-red);
+      color: var(--text-main);
+      transform: translateY(-3px);
+    }
+
+    /* ================= 4. Keyframe Animations ================= */
+
+    @keyframes cardEntrance {
+      0% { opacity: 0; transform: translateY(40px) scale(0.95); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    @keyframes ambientPulse {
+      0%, 100% { transform: scale(1); opacity: 0.3; }
+      50% { transform: scale(1.3); opacity: 0.7; }
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes corePulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 20px var(--bd-red); }
+      50% { transform: scale(1.1); box-shadow: 0 0 45px var(--bd-red), 0 0 15px #00e1ff; }
+    }
+
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(15px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Final State Screen */
+    .final-screen {
+      display: none; /* JS will reveal this */
+      text-align: center;
+      position: relative;
+      z-index: 5;
+    }
+
+    .confirm-icon {
+      font-size: 5rem;
+      margin-bottom: 10px;
+    }
+
+  </style>
 </head>
 <body>
-    <section class="page_404">
-  <div class="container">
-    <div class="row">
-      <div class="col-sm-12 ">
-        <div class="div-1">
-          <div class="four_zero_four_bg">
-            <h1 class="text-center ">404</h1>
 
-          </div>
+  <!-- Animated Ambient Background Layer -->
+  <div class="ambient-glow"></div>
 
-          <div class="contant_box_404">
-            <h3 class="h2">
-              Look like you're lost
-            </h3>
-          </div>
-        </div>
-      </div>
+  <!-- The Main Decision Card -->
+  <div class="verification-card" id="initial-screen">
+    <div class="status-area">
+      <div class="outer-ring"></div>
+      <div class="pulsing-disk" title="Dynamic Bangladesh National Symbol"></div>
+    </div>
+
+    <h1>নাগরিকত্ব যাচাইকরণ</h1>
+    <p class="bilingual">আপনি কি বাংলাদেশের নাগরিক বা আপনি কি বর্তমানে বাংলাদেশে বসবাস করছেন?</p>
+    <p class="bilingual" style="color:var(--text-muted); margin-top:-20px;">Are you from Bangladesh (Citizen/Resident)?</p>
+
+    <div class="btn-group">
+      <!-- 'Yes' goes green on hover -->
+      <a href="javascript:void(0)" class="btn btn-yes" onclick="showChoice('Yes')">হ্যাঁ (Yes)</a>
+      <!-- 'No' gets red outline on hover -->
+      <a href="javascript:void(0)" class="btn btn-no" onclick="showChoice('No')">না (No)</a>
     </div>
   </div>
-</section>
+
+  <!-- The confirmation state screen after a decision is made -->
+  <div class="final-screen verification-card" id="final-screen">
+    <div class="confirm-icon" id="confirm-icon">🇧🇩</div>
+    <h1 id="confirm-title">Verification Successful!</h1>
+    <p class="bilingual" id="confirm-msg">Redirecting to citizen services...</p>
+    <div style="color:var(--text-muted); margin-top:15px; text-decoration:underline;">
+      নাগরিক পরিষেবাগুলিতে পুনরায় নির্দেশিত হচ্ছে...
+    </div>
+  </div>
+
+  <script>
+    // Handles the smooth transition after user selects an option.
+    function showChoice(status) {
+      const initScreen = document.getElementById('initial-screen');
+      const finalScreen = document.getElementById('final-screen');
+      const icon = document.getElementById('confirm-icon');
+      const title = document.getElementById('confirm-title');
+      const msg = document.getElementById('confirm-msg');
+
+      // 1. Hide the choice screen
+      initScreen.style.display = 'none';
+
+      // 2. Adjust content based on the decision
+      if (status === 'Yes') {
+        icon.innerText = "🇧🇩";
+        title.innerText = "নাগরিকত্ব যাচাইকরণ সম্পূর্ণ";
+        msg.innerText = "Thank you for confirming. Verification successful.";
+      } else {
+        icon.innerText = "🌐";
+        title.innerText = "নাগরিক নন / অনাবাসী";
+        msg.innerText = "Thank you for confirming. Access denied to internal citizen services.";
+      }
+
+      // 3. Reveal the final confirmation state smoothly
+      finalScreen.style.display = 'block';
+    }
+  </script>
+
 </body>
 </html>
